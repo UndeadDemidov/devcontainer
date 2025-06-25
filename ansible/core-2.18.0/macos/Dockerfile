@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     sudo gnupg \
     software-properties-common \
+    libonig-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install UV package manager (10-100x faster than pip)
