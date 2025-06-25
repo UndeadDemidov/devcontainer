@@ -21,14 +21,43 @@ This repository contains ready-to-use Docker images specifically configured for 
 - **Tools**: ansible-core, ansible-lint, ansible-navigator
 - **Additional Features**: ansible-ctx, cdp, aliases
 
+## Download
+
+You can download the pre-built images directly from GitHub Container Registry (GHCR):
+
+### Ansible Core 2.18.0 (macOS)
+```bash
+docker pull ghcr.io/undeaddemidov/devcontainer-core-2.18.0/macos
+```
+
+Or use it directly in your `devcontainer.json`:
+```json
+{
+  "name": "Ansible Development",
+  "image": "ghcr.io/undeaddemidov/devcontainer-core-2.18.0/macos"
+}
+```
+
 ## Usage
 
+### Option 1: Use Pre-built Image (Recommended)
+1. Use the image directly from GHCR in your `.devcontainer/devcontainer.json`
+
+### Option 2: Build from Source
 1. Clone the repository
 2. Choose the desired image from the collection
 3. Use the Dockerfile as a base for your `.devcontainer/devcontainer.json`
 
 ### Example devcontainer.json
 
+```json
+{
+  "name": "Ansible Development",
+  "image": "ghcr.io/undeaddemidov/devcontainer-core-2.18.0/macos"
+}
+```
+
+Or build from source:
 ```json
 {
   "name": "Ansible Development",

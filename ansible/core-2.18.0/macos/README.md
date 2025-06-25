@@ -2,6 +2,14 @@
 
 Optimized Docker image for Ansible development in VS Code DevContainer environment, specifically configured for macOS.
 
+## Download
+
+You can download the pre-built image directly from GitHub Container Registry (GHCR):
+
+```bash
+docker pull ghcr.io/undeaddemidov/devcontainer-core-2.18.0/macos
+```
+
 ## Image Description
 
 ### Technical Specifications
@@ -112,7 +120,28 @@ alias ctxs='ansible-ctx scan'
 
 ## DevContainer Usage
 
-### devcontainer.json
+### Option 1: Use Pre-built Image (Recommended)
+```json
+{
+  "name": "Ansible Development",
+  "image": "ghcr.io/undeaddemidov/devcontainer-core-2.18.0/macos",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.ansible",
+        "redhat.ansible"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "postCreateCommand": "echo 'Ansible development environment ready!'"
+}
+```
+
+### Option 2: Build from Source
 ```json
 {
   "name": "Ansible Development",
