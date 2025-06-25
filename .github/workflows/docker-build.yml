@@ -1,0 +1,114 @@
+name: Build and Push Docker Image to GHCR
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/docker-build.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/docker-build.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  find-dockerfiles:
+    runs-on: ubuntu-latest
+    outputs:
+      dockerfile-paths: ${{ steps.find.outputs.paths }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find Dockerfiles
+        id: find
+        run: |
+          # Находим все Dockerfile в папке ansible
+          dockerfiles=$(find ansible -name "Dockerfile" -type f)
+          
+          # Преобразуем пути в JSON массив
+          paths_json=$(echo "$dockerfiles" | jq -R -s -c 'split("\n")[:-1]')
+          
+          echo "paths=$paths_json" >> $GITHUB_OUTPUT
+          echo "Found Dockerfiles:"
+          echo "$dockerfiles"
+
+  build:
+    needs: find-dockerfiles
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfile-paths) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image name
+        id: image-name
+        run: |
+          # Получаем путь к Dockerfile (например: ansible/core-2.18.0/macos/Dockerfile)
+          dockerfile_path="${{ matrix.dockerfile }}"
+          
+          # Убираем /Dockerfile из пути
+          dir_path=$(dirname "$dockerfile_path")
+          
+          # Убираем префикс 'ansible/' и формируем имя образа
+          # Из ansible/core-2.18.0/macos получаем core-2.18.0/macos
+          image_suffix=$(echo "$dir_path" | sed 's|^ansible/||')
+          
+          # Формируем полное имя образа
+          image_name="${{ github.repository }}-$image_suffix"
+          
+          echo "dockerfile_path=$dockerfile_path" >> $GITHUB_OUTPUT
+          echo "dir_path=$dir_path" >> $GITHUB_OUTPUT
+          echo "image_suffix=$image_suffix" >> $GITHUB_OUTPUT
+          echo "image_name=$image_name" >> $GITHUB_OUTPUT
+          
+          echo "Building multi-platform image: $image_name"
+          echo "From Dockerfile: $dockerfile_path"
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.image_name }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ steps.image-name.outputs.dir_path }}
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max 
