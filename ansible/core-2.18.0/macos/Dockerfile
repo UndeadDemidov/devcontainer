@@ -1,7 +1,7 @@
 # Ubuntu-based DevContainer for Python/Ansible Development
 # Optimized for security, performance, and VS Code compatibility
 
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-22.04 AS builder
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS builder
 
 # Install build dependencies and system utilities
 RUN apt-get update && apt-get install -y \
@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     sudo gnupg \
     software-properties-common \
     libonig-dev \
+    git-crypt \
+    sshpass \
     && rm -rf /var/lib/apt/lists/*
 
 # Install UV package manager (10-100x faster than pip)
